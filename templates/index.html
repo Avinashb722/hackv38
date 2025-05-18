@@ -1,0 +1,2178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Monitor System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #1a237e 0%, #283593 100%);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 20px 0;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            transform: translateX(-250px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.expanded {
+            transform: translateX(0);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex: 1;
+        }
+
+        .sidebar-menu li {
+            padding: 15px 25px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            margin: 5px 0;
+            font-weight: 500;
+        }
+
+        .sidebar-menu li:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 4px solid #64b5f6;
+            padding-left: 30px;
+        }
+
+        .sidebar-menu li.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-left: 4px solid #64b5f6;
+            color: #64b5f6;
+        }
+
+        .menu-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background-color: white;
+            transition: all 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .menu-toggle:hover span {
+            background-color: #64b5f6;
+        }
+
+        .menu-toggle.active span {
+            background-color: #64b5f6;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+
+        .main-content {
+            margin-left: 0;
+            width: 100%;
+            padding: 20px;
+            transition: margin-left 0.3s ease, width 0.3s ease;
+        }
+
+        .main-content.sidebar-visible {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+        }
+    
+        h1, h3, h4 {
+            color: #1a237e;
+        }
+    
+        .header {
+            background: linear-gradient(180deg, #1a237e 0%, #283593 100%);
+            padding: 15px 0;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+    
+        .header h1 {
+            color: white;
+            margin: 0;
+            font-weight: 500;
+        }
+    
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+        }
+    
+        .camera-btn {
+            padding: 10px 20px;
+            border: none;
+            background-color: #cfd8dc;
+            color: #1a237e;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+    
+        .camera-btn.active {
+            background-color: #1a237e;
+            color: white;
+        }
+    
+        .video-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            width: 100%;
+            height: 720px;
+        }
+    
+        .video-feed {
+            border: 4px solid #1a237e;
+            border-radius: 12px;
+            width: 1280px;
+            height: 720px;
+            object-fit: cover;
+        }
+    
+        .metrics-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+    
+        .metric-card {
+            flex: 1 1 22%;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+    
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #1a237e;
+        }
+    
+        .metric-label {
+            margin-top: 10px;
+            color: #607d8b;
+            font-size: 0.95em;
+        }
+    
+        .zone-availability {
+            margin-bottom: 30px;
+        }
+    
+        .zone-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+    
+        .zone-card {
+            padding: 20px;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: 0.3s;
+        }
+    
+        .zone-card.available { border-left: 5px solid #4caf50; }
+        .zone-card.occupied { border-left: 5px solid #ff9800; }
+        .zone-card.full { border-left: 5px solid #f44336; }
+        .zone-card.restricted { border-left: 5px solid #9c27b0; }
+    
+        .zone-status {
+            font-weight: bold;
+            margin-top: 10px;
+            color: #455a64;
+        }
+    
+        .zone-count {
+            font-size: 1.2em;
+            margin-top: 5px;
+        }
+    
+        .analytics-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+            width: 100%;
+        }
+    
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            height: 400px;
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+    
+        .chart-container canvas {
+            max-width: 100%;
+            height: 100% !important;
+            width: 100% !important;
+        }
+    
+        .alerts-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    
+        .alerts-container h3 {
+            padding: 15px 20px;
+            margin: 0;
+            border-bottom: 1px solid #eee;
+            color: #1a237e;
+            font-size: 1.1em;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 1;
+        }
+    
+        .alert-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f5f5f5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s ease;
+        }
+    
+        .alert-item:hover {
+            background-color: #f8f9fa;
+        }
+    
+        .alert-item:last-child {
+            border-bottom: none;
+        }
+    
+        .alert-message {
+            color: #d32f2f;
+            font-weight: 500;
+            flex: 1;
+            margin-right: 15px;
+        }
+    
+        .alert-time {
+            color: #757575;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+    
+        .productivity-container {
+            margin-bottom: 30px;
+        }
+    
+        .productivity-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+    
+        .productivity-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+    
+        .productivity-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    
+        .productivity-card h4 {
+            color: #1a237e;
+            margin: 0 0 15px 0;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    
+        .productivity-stats {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+    
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+    
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+    
+        .stat-label {
+            color: #607d8b;
+            font-size: 0.9em;
+        }
+    
+        .stat-value {
+            font-weight: 500;
+            color: #1a237e;
+        }
+    
+        .zone-stats {
+            margin-top: 15px;
+        }
+    
+        .zone-stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+    
+        .zone-stat-item:last-child {
+            border-bottom: none;
+        }
+    
+        .zone-label {
+            color: #607d8b;
+            font-size: 0.9em;
+        }
+    
+        .zone-value {
+            font-weight: 500;
+            color: #1a237e;
+        }
+    
+        .zone-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 500;
+            color: white;
+        }
+    
+        .zone-none { background: #9e9e9e; }
+        .zone-zone1 { background: #4caf50; }
+        .zone-zone2 { background: #2196f3; }
+        .zone-zone3 { background: #ff9800; }
+        .zone-zone4 { background: #9c27b0; }
+    
+        .content-section {
+            display: none;
+        }
+    
+        .content-section.active {
+            display: block;
+        }
+    
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 20px;
+        }
+    
+        .section-header h3 {
+            margin: 0;
+            color: #1a237e;
+        }
+    
+        .export-btn {
+            background: linear-gradient(180deg, #1a237e 0%, #283593 100%);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+    
+        .export-btn:hover {
+            background: linear-gradient(180deg, #283593 0%, #1a237e 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+    
+        .export-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    
+        .export-btn i {
+            font-size: 14px;
+        }
+    
+        .dashboard-card {
+            position: relative;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+    
+        .card-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    
+        .card-header h3 {
+            margin: 0;
+            color: #1a237e;
+        }
+    
+        .card-content {
+            padding: 20px;
+        }
+
+        .heatmap-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .heatmap-container h3 {
+            color: #1a237e;
+            margin: 0 0 20px 0;
+            font-size: 1.2em;
+        }
+
+        .heatmap-image {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: block;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        .details-container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .details-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .details-section h3 {
+            color: #1a237e;
+            margin: 0 0 15px 0;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .details-section h3 i {
+            color: #2196F3;
+        }
+
+        .details-section p {
+            color: #455a64;
+            line-height: 1.6;
+            margin: 0 0 15px 0;
+        }
+
+        .details-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .details-list li {
+            color: #455a64;
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .details-list li:before {
+            content: "•";
+            color: #2196F3;
+            position: absolute;
+            left: 0;
+            font-size: 1.2em;
+        }
+
+        .footer {
+    background: linear-gradient(180deg, #1a237e 0%, #283593 100%);
+    color: white;
+    padding: 15px 0;
+    position: fixed; /* Fixes the footer at bottom */
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    padding: 0 20px;
+    flex-wrap: nowrap; /* Ensures single line */
+    overflow-x: auto;   /* Allows scroll if too wide */
+}
+
+.footer-text {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.8);
+    white-space: nowrap;
+}
+/* Apply flex layout to the entire page */
+body, html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.page-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Main content takes all available space */
+.main-content {
+    flex: 1;
+}
+
+/* Footer stays at the bottom only when content is short */
+.footer {
+    display: none; /* Hidden by default */
+    background: linear-gradient(180deg, #1a237e 0%, #283593 100%);
+    color: white;
+    padding: 15px 0;
+    width: 100%;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    padding: 0 20px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+}
+
+.footer-text {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.8);
+    white-space: nowrap;
+}
+
+
+        .social-links {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .social-link {
+            color: white;
+            font-size: 1.3em;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .social-link:hover {
+            color: #64b5f6;
+            transform: translateY(-2px);
+        }
+
+        /* Calendar Styles */
+        .calendar-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-header button {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            color: #1a237e;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            border: 1px solid #eee;
+            padding: 5px;
+            position: relative;
+        }
+
+        .calendar-day.has-events {
+            background-color: rgba(33, 150, 243, 0.1);
+        }
+
+        .calendar-day.today {
+            border: 2px solid #1a237e;
+        }
+
+        .calendar-day-number {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .calendar-event {
+            font-size: 0.8em;
+            padding: 2px 4px;
+            margin: 2px 0;
+            border-radius: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .event-meeting { background-color: #e3f2fd; }
+        .event-break { background-color: #fff3e0; }
+        .event-work { background-color: #e8f5e9; }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #455a64;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .submit-btn,
+        .cancel-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .submit-btn {
+            background: #1a237e;
+            color: white;
+        }
+
+        .cancel-btn {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        /* Reports Styles */
+        .reports-container {
+            padding: 20px;
+        }
+
+        .report-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .report-select,
+        .date-input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .reports-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .report-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .report-card h3 {
+            color: #1a237e;
+            margin: 0 0 15px 0;
+        }
+
+        .report-metrics {
+            margin-top: 15px;
+        }
+
+        .report-metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .report-metric:last-child {
+            border-bottom: none;
+        }
+
+        .dashboard-history {
+            margin-top: 20px;
+        }
+
+        .history-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .history-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .history-item h4 {
+            color: #1a237e;
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+        }
+
+        .history-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .history-metric {
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .history-metric-label {
+            font-size: 0.9em;
+            color: #607d8b;
+        }
+
+        .history-metric-value {
+            font-weight: 500;
+            color: #1a237e;
+        }
+
+        .zone-summary {
+            margin-top: 10px;
+        }
+
+        .zone-stat {
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .zone-stat span {
+            font-weight: 500;
+            color: #1a237e;
+        }
+
+        .dashboard-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .loading, .error, .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .error {
+            color: #d32f2f;
+        }
+        .no-data {
+            color: #666;
+        }
+
+        /* Add these styles */
+        .export-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .export-modal-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .export-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .export-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .export-option:hover {
+            background-color: #f5f5f5;
+            border-color: #1a237e;
+        }
+
+        .export-option i {
+            color: #1a237e;
+            font-size: 1.2em;
+        }
+
+        .export-option.selected {
+            background-color: #e8eaf6;
+            border-color: #1a237e;
+        }
+
+        /* Add these styles */
+        .events-list-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .events-list-container h3 {
+            color: #1a237e;
+            margin: 0 0 20px 0;
+            font-size: 1.2em;
+        }
+
+        .events-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .event-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 4px solid #1a237e;
+            transition: all 0.3s ease;
+        }
+
+        .event-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-card.meeting { border-left-color: #2196F3; }
+        .event-card.break { border-left-color: #FF9800; }
+        .event-card.work_session { border-left-color: #4CAF50; }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .event-title {
+            font-weight: 500;
+            color: #1a237e;
+            font-size: 1.1em;
+        }
+
+        .event-type {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            color: white;
+        }
+
+        .event-type.meeting { background-color: #2196F3; }
+        .event-type.break { background-color: #FF9800; }
+        .event-type.work_session { background-color: #4CAF50; }
+
+        .event-details {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .event-time {
+            margin-top: 5px;
+            color: #1a237e;
+            font-weight: 500;
+        }
+
+        .event-zone {
+            margin-top: 5px;
+            color: #666;
+        }
+
+        .no-events {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+    </style>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <div class="sidebar">
+        <ul class="sidebar-menu">
+            <li onclick="showSection('dashboard')" class="active">Dashboard</li>
+            <li onclick="showSection('camera-monitor')">Camera Monitor</li>
+            <li onclick="showSection('reports')">Reports</li>
+            <li onclick="showSection('calendar')">Calendar</li>
+            <li onclick="showSection('details')">Details</li>
+            <li onclick="exportReport()">Export Report</li>
+        </ul>
+        <div class="social-links">
+            <a href="https://github.com/Anandck07" target="_blank" class="social-link" title="GitHub Profile">
+                <i class="fab fa-github"></i>
+            </a>
+            <a href="https://www.linkedin.com/in/anand-kumbar07" target="_blank" class="social-link" title="LinkedIn Profile">
+                <i class="fab fa-linkedin"></i>
+            </a>
+            <a href="https://www.instagram.com/anand_kumbar_07?igsh=MTFhNjAzZWd4aG9vNA==" target="_blank" class="social-link" title="Instagram Profile">
+                <i class="fab fa-instagram"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div id="dashboard" class="content-section active">
+            <div class="header">
+                <div class="header-content">
+                    <h1>Dashboard</h1>
+                    <div class="dashboard-controls">
+                        <input type="date" id="history-date" class="date-input">
+                        <button class="export-btn" onclick="loadDashboardHistory()">
+                            <i class="fas fa-history"></i> View History
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metrics-container">
+                <div class="metric-card">
+                    <div class="metric-value" id="productivity-hours">0</div>
+                    <div class="metric-label">Productivity Hours</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="room-utilization">0%</div>
+                    <div class="metric-label">Room Utilization</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="desk-occupancy">0%</div>
+                    <div class="metric-label">Desk Occupancy</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="active-tracks">0</div>
+                    <div class="metric-label">Active Tracks</div>
+                </div>
+            </div>
+
+            <div class="zone-availability dashboard-card">
+                <h3>Zone Availability</h3>
+                <div class="zone-grid">
+                    <div class="zone-card" id="zone1">
+                        <h4>Zone 1 (Desk)</h4>
+                        <div class="zone-status">Available</div>
+                        <div class="zone-count">0/4</div>
+                    </div>
+                    <div class="zone-card" id="zone2">
+                        <h4>Zone 2 (Meeting)</h4>
+                        <div class="zone-status">Available</div>
+                        <div class="zone-count">0/4</div>
+                    </div>
+                    <div class="zone-card" id="zone3">
+                        <h4>Zone 3 (Desk)</h4>
+                        <div class="zone-status">Available</div>
+                        <div class="zone-count">0/4</div>
+                    </div>
+                    <div class="zone-card" id="zone4">
+                        <h4>Zone 4 (Restricted)</h4>
+                        <div class="zone-status">Available</div>
+                        <div class="zone-count">0/4</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analytics-container dashboard-card">
+                <div class="card-header">
+                    <h3>Analytics & Alerts</h3>
+                </div>
+                <div class="card-content">
+                    <div class="chart-container">
+                        <canvas id="productivityChart"></canvas>
+                    </div>
+                    <div class="alerts-container">
+                        <h3>Recent Alerts</h3>
+                        <div id="alerts-list">
+                            <!-- Alerts will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="productivity-container dashboard-card">
+                <div class="card-header">
+                    <h3>Individual Productivity</h3>
+                </div>
+                <div class="card-content">
+                    <div id="productivity-list" class="productivity-list">
+                        <!-- Productivity cards will be inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="heatmap-container dashboard-card">
+                <div class="card-header">
+                    <h3>Space Utilization Heatmap</h3>
+                </div>
+                <div class="card-content">
+                    <img src="{{ url_for('get_heatmap') }}" class="heatmap-image" id="heatmap" alt="Space Utilization Heatmap">
+                </div>
+            </div>
+
+            <!-- Dashboard History Section -->
+            <div class="dashboard-history dashboard-card">
+                <div class="card-header">
+                    <h3>Dashboard History</h3>
+                </div>
+                <div class="card-content">
+                    <div id="dashboard-history-list" class="history-list">
+                        <!-- History items will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="camera-monitor" class="content-section">
+            <div class="header">
+                <div class="header-content">
+                    <h1>Camera Monitor</h1>
+                    <div class="camera-controls">
+                        <button class="camera-btn active" onclick="switchCamera('system')">System Camera</button>
+                        <button class="camera-btn" onclick="switchCamera('droidcam')">DroidCam</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="video-container">
+                <img src="{{ url_for('video_feed') }}" class="video-feed">
+            </div>
+        </div>
+
+        <div id="reports" class="content-section">
+            <div class="header">
+                <div class="header-content">
+                    <h1>Reports</h1>
+                </div>
+            </div>
+
+            <div class="reports-container">
+                <div class="reports-list" id="reports-list">
+                    <!-- Reports will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="calendar" class="content-section">
+            <div class="header">
+                <div class="header-content">
+                    <h1>Calendar</h1>
+                    <div class="calendar-controls">
+                        <button class="calendar-btn" onclick="showAddEventModal()">
+                            <i class="fas fa-plus"></i> Add Event
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <button onclick="previousMonth()"><i class="fas fa-chevron-left"></i></button>
+                    <h2 id="calendar-month"></h2>
+                    <button onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="calendar-grid" id="calendar-grid">
+                    <!-- Calendar will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Add Events List Section -->
+            <div class="events-list-container">
+                <h3>Upcoming Events</h3>
+                <div class="events-list" id="events-list">
+                    <!-- Events will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Event Modal -->
+        <div id="event-modal" class="modal">
+            <div class="modal-content">
+                <h3>Add Event</h3>
+                <form id="event-form">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="event-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="event-description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Start Time</label>
+                        <input type="datetime-local" id="event-start" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Time</label>
+                        <input type="datetime-local" id="event-end" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Event Type</label>
+                        <select id="event-type" required>
+                            <option value="meeting">Meeting</option>
+                            <option value="break">Break</option>
+                            <option value="work_session">Work Session</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Zone</label>
+                        <select id="event-zone">
+                            <option value="zone1">Zone 1 (Desk)</option>
+                            <option value="zone2">Zone 2 (Meeting)</option>
+                            <option value="zone3">Zone 3 (Desk)</option>
+                            <option value="zone4">Zone 4 (Restricted)</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Add Event</button>
+                        <button type="button" class="cancel-btn" onclick="closeEventModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="details" class="content-section">
+            <div class="header">
+                <div class="header-content">
+                    <h1>System Details</h1>
+                </div>
+            </div>
+
+            <div class="details-container">
+                <div class="details-section">
+                    <h3><i class="fas fa-question-circle"></i> Why</h3>
+                    <p>Modern workplaces need smarter tools to optimize productivity, ensure accountability, and better manage time spent at desks or in meetings. Traditional systems often fail to provide accurate, real-time data about whether an employee is actively working or idle. This system fills that gap by offering automated, AI-powered monitoring for real-time workplace engagement.</p>
+                </div>
+
+                <div class="details-section">
+                    <h3><i class="fas fa-info-circle"></i> What</h3>
+                    <p>A real-time monitoring system that uses computer vision and AI to:</p>
+                    <ul class="details-list">
+                        <li>Detect individuals at office desks</li>
+                        <li>Analyze their behavior (e.g., looking at laptop, facing camera)</li>
+                        <li>Track working vs idle time</li>
+                        <li>Record time spent in different zones (e.g., desk, breakroom, meeting room)</li>
+                        <li>Provide detailed productivity reports</li>
+                    </ul>
+                </div>
+
+                <div class="details-section">
+                    <h3><i class="fas fa-users"></i> Who</h3>
+                    <ul class="details-list">
+                        <li>Employers and managers who want to understand and optimize employee productivity</li>
+                        <li>HR teams for performance tracking</li>
+                        <li>IT/Admin departments for facility usage and zone management</li>
+                        <li>Employees looking to improve their self-discipline and focus through visibility</li>
+                    </ul>
+                </div>
+
+                <div class="details-section">
+                    <h3><i class="fas fa-clock"></i> When</h3>
+                    <ul class="details-list">
+                        <li>During working hours, to monitor engagement and break durations</li>
+                        <li>Throughout the workday to maintain a log of productive time vs idle time</li>
+                        <li>Especially useful in remote/hybrid work environments and co-working spaces</li>
+                    </ul>
+                </div>
+
+                <div class="details-section">
+                    <h3><i class="fas fa-map-marker-alt"></i> Where</h3>
+                    <ul class="details-list">
+                        <li>At office desks</li>
+                        <li>In meeting rooms</li>
+                        <li>In school classrooms or study areas</li>
+                        <li>Across zoned office layouts (using cameras or edge devices)</li>
+                    </ul>
+                </div>
+
+                <div class="details-section">
+                    <h3><i class="fas fa-cogs"></i> How</h3>
+                    <ul class="details-list">
+                        <li>Using camera-based computer vision models</li>
+                        <li>Person detection (e.g., YOLO, OpenCV, or Deep Learning frameworks)</li>
+                        <li>Behavior analysis based on head position, eye gaze, and proximity to the laptop</li>
+                        <li>Time tracking algorithms to measure time spent in each zone</li>
+                        <li>Optional integration with dashboards for analytics and reporting</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-text">© 2024 Employee Monitor System</div>
+        </div>
+    </footer>
+
+    <!-- Add Export Modal -->
+    <div id="export-modal" class="export-modal">
+        <div class="export-modal-content">
+            <h3>Export Report</h3>
+            <div class="export-options">
+                <div class="export-option" onclick="selectExportOption('pdf')">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Export as PDF</span>
+                </div>
+                <div class="export-option" onclick="selectExportOption('excel')">
+                    <i class="fas fa-file-excel"></i>
+                    <span>Export as Excel</span>
+                </div>
+                <div class="export-option" onclick="selectExportOption('csv')">
+                    <i class="fas fa-file-csv"></i>
+                    <span>Export as CSV</span>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="submit-btn" onclick="downloadReport()">Download</button>
+                <button class="cancel-btn" onclick="closeExportModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let productivityChart;
+        
+        function initChart() {
+            const ctx = document.getElementById('productivityChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (productivityChart) {
+                productivityChart.destroy();
+            }
+
+            productivityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Productivity Hours',
+                        data: [],
+                        borderColor: '#2196F3',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#2196F3'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 10,
+                            right: 20,
+                            bottom: 10,
+                            left: 10
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 10,
+                            titleFont: {
+                                size: 14
+                            },
+                            bodyFont: {
+                                size: 13
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                },
+                                padding: 10
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                },
+                                maxRotation: 45,
+                                minRotation: 45,
+                                padding: 10
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Add window resize handler
+        window.addEventListener('resize', function() {
+            if (productivityChart) {
+                productivityChart.resize();
+            }
+        });
+
+        function updateMetrics() {
+            fetch('/metrics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('productivity-hours').textContent = data.productivity_hours.toFixed(2);
+                    document.getElementById('room-utilization').textContent = data.room_utilization + '%';
+                    document.getElementById('desk-occupancy').textContent = data.desk_occupancy + '%';
+                    document.getElementById('active-tracks').textContent = data.tracked_objects;
+
+                    // Update zone availability
+                    for (let zone in data.zone_counts) {
+                        const zoneCard = document.getElementById(zone);
+                        const count = data.zone_counts[zone];
+                        const capacity = data.zone_availability[zone].capacity;
+                        const zoneType = zone === 'zone4' ? 'restricted' : 
+                                       count >= capacity ? 'full' :
+                                       count > 0 ? 'occupied' : 'available';
+                        
+                        zoneCard.className = `zone-card ${zoneType}`;
+                        zoneCard.querySelector('.zone-status').textContent = 
+                            zoneType.charAt(0).toUpperCase() + zoneType.slice(1);
+                        zoneCard.querySelector('.zone-count').textContent = 
+                            `${count}/${capacity}`;
+                    }
+                });
+        }
+
+        function updateAnalytics() {
+            fetch('/analytics')
+                .then(response => response.json())
+                .then(data => {
+                    // Update chart
+                    const timestamps = data.historical_data.productivity.map(d => 
+                        new Date(d.timestamp).toLocaleTimeString()
+                    );
+                    const values = data.historical_data.productivity.map(d => d.value);
+                    
+                    // Update chart data
+                    productivityChart.data.labels = timestamps;
+                    productivityChart.data.datasets[0].data = values;
+                    productivityChart.update('none');
+
+                    // Update alerts
+                    const alertsList = document.getElementById('alerts-list');
+                    if (data.alerts && data.alerts.length > 0) {
+                        alertsList.innerHTML = data.alerts.map(alert => `
+                            <div class="alert-item">
+                                <div class="alert-message">${alert.message}</div>
+                                <div class="alert-time">${new Date(alert.timestamp).toLocaleString()}</div>
+                            </div>
+                        `).join('');
+                    } else {
+                        alertsList.innerHTML = `
+                            <div class="alert-item">
+                                <div class="alert-message">No recent alerts</div>
+                                <div class="alert-time">${new Date().toLocaleString()}</div>
+                            </div>
+                        `;
+                    }
+
+                    // Update productivity cards
+                    updateProductivityCards(data.person_metrics);
+                })
+                .catch(error => {
+                    console.error('Error updating analytics:', error);
+                    const alertsList = document.getElementById('alerts-list');
+                    alertsList.innerHTML = `
+                        <div class="alert-item">
+                            <div class="alert-message">Error loading alerts</div>
+                            <div class="alert-time">${new Date().toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+        }
+
+        function updateProductivityCards(personMetrics) {
+            const productivityList = document.getElementById('productivity-list');
+            const personEntries = Object.entries(personMetrics);
+            
+            if (personEntries.length > 4) {
+                // Show zone summary when more than 4 people
+                productivityList.innerHTML = generateZoneSummary(personEntries);
+            } else {
+                // Show individual cards for 4 or fewer people
+                productivityList.innerHTML = generateIndividualCards(personEntries);
+            }
+        }
+
+        function generateZoneSummary(personEntries) {
+            const zoneTotals = {
+                zone1: 0,
+                zone2: 0,
+                zone3: 0,
+                zone4: 0
+            };
+
+            personEntries.forEach(([_, metrics]) => {
+                Object.entries(metrics.zone_hours).forEach(([zone, hours]) => {
+                    zoneTotals[zone] += hours;
+                });
+            });
+
+            return `
+                <div class="productivity-card" style="grid-column: 1 / -1;">
+                    <h4><i class="fas fa-chart-pie"></i> Zone Summary</h4>
+                    <div class="zone-stats">
+                        ${Object.entries(zoneTotals).map(([zone, hours]) => `
+                            <div class="zone-stat-item">
+                                <span class="zone-label">${getZoneName(zone)}</span>
+                                <span class="zone-value">${hours.toFixed(1)} hours</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+        }
+
+        function generateIndividualCards(personEntries) {
+            return personEntries.map(([id, metrics]) => `
+                <div class="productivity-card">
+                    <h4>
+                        <i class="fas fa-user"></i>
+                        Person ${id}
+                        <span class="zone-indicator ${getZoneClass(metrics.current_zone)}">
+                            ${getZoneName(metrics.current_zone)}
+                        </span>
+                    </h4>
+                    <div class="productivity-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Hours</span>
+                            <span class="stat-value">${metrics.total_productive_hours.toFixed(1)}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Meeting Hours</span>
+                            <span class="stat-value">${metrics.meeting_hours.toFixed(1)}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Break Time</span>
+                            <span class="stat-value">${metrics.break_time.toFixed(1)}</span>
+                        </div>
+                    </div>
+                    <div class="zone-stats">
+                        <h5>Zone Hours</h5>
+                        ${Object.entries(metrics.zone_hours).map(([zone, hours]) => `
+                            <div class="zone-stat-item">
+                                <span class="zone-label">${getZoneName(zone)}</span>
+                                <span class="zone-value">${hours.toFixed(1)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getZoneName(zone) {
+            const zoneNames = {
+                'zone1': 'Desk Area',
+                'zone2': 'Meeting Room',
+                'zone3': 'Work Station',
+                'zone4': 'Restricted Area',
+                'none': 'Not Assigned'
+            };
+            return zoneNames[zone] || zone;
+        }
+
+        function getZoneClass(zone) {
+            const zoneClasses = {
+                'zone1': 'zone-zone1',
+                'zone2': 'zone-zone2',
+                'zone3': 'zone-zone3',
+                'zone4': 'zone-zone4',
+                'none': 'zone-none'
+            };
+            return zoneClasses[zone] || 'zone-none';
+        }
+
+        function switchCamera(cameraType) {
+            fetch('/switch_camera', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ camera_type: cameraType })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update button states
+                    const systemBtn = document.querySelector('.camera-btn:first-child');
+                    const droidBtn = document.querySelector('.camera-btn:last-child');
+                    
+                    if (cameraType === 'system') {
+                        systemBtn.classList.add('active');
+                        droidBtn.classList.remove('active');
+                    } else {
+                        systemBtn.classList.remove('active');
+                        droidBtn.classList.add('active');
+                    }
+                    
+                    // Refresh video feed with timestamp to prevent caching
+                    const videoFeed = document.querySelector('.video-feed');
+                    videoFeed.src = '/video_feed?' + new Date().getTime();
+                }
+            })
+            .catch(error => {
+                console.error('Error switching camera:', error);
+                // Revert button states on error
+                const systemBtn = document.querySelector('.camera-btn:first-child');
+                const droidBtn = document.querySelector('.camera-btn:last-child');
+                if (cameraType === 'system') {
+                    systemBtn.classList.remove('active');
+                    droidBtn.classList.add('active');
+                } else {
+                    systemBtn.classList.add('active');
+                    droidBtn.classList.remove('active');
+                }
+            });
+        }
+
+        function updateHeatmap() {
+            const heatmap = document.getElementById('heatmap');
+            if (heatmap) {
+                heatmap.src = '/heatmap?' + new Date().getTime();
+            }
+        }
+
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Update menu active state
+            document.querySelectorAll('.sidebar-menu li').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+        }
+
+        function toggleMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            sidebar.classList.toggle('expanded');
+            mainContent.classList.toggle('sidebar-visible');
+            menuToggle.classList.toggle('active');
+        }
+
+        // Initialize chart and start updates
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+            setInterval(updateMetrics, 1000);
+            setInterval(updateAnalytics, 5000);
+            setInterval(updateHeatmap, 2000);
+        });
+
+        // Calendar functionality
+        let currentDate = new Date();
+        let events = [];
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            
+            document.getElementById('calendar-month').textContent = 
+                `${firstDay.toLocaleString('default', { month: 'long' })} ${year}`;
+            
+            const calendarGrid = document.getElementById('calendar-grid');
+            calendarGrid.innerHTML = '';
+            
+            // Add day headers
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            days.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'calendar-day-header';
+                dayHeader.textContent = day;
+                calendarGrid.appendChild(dayHeader);
+            });
+            
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < firstDay.getDay(); i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day empty';
+                calendarGrid.appendChild(emptyDay);
+            }
+            
+            // Add days of the month
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                
+                const currentDay = new Date(year, month, day);
+                if (currentDay.toDateString() === new Date().toDateString()) {
+                    dayElement.classList.add('today');
+                }
+                
+                const dayNumber = document.createElement('div');
+                dayNumber.className = 'calendar-day-number';
+                dayNumber.textContent = day;
+                dayElement.appendChild(dayNumber);
+                
+                // Add events for this day
+                const dayEvents = events.filter(event => {
+                    const eventDate = new Date(event.start_time);
+                    return eventDate.getDate() === day &&
+                           eventDate.getMonth() === month &&
+                           eventDate.getFullYear() === year;
+                });
+                
+                if (dayEvents.length > 0) {
+                    dayElement.classList.add('has-events');
+                    dayEvents.forEach(event => {
+                        const eventElement = document.createElement('div');
+                        eventElement.className = `calendar-event event-${event.event_type}`;
+                        eventElement.textContent = event.title;
+                        dayElement.appendChild(eventElement);
+                    });
+                }
+                
+                calendarGrid.appendChild(dayElement);
+            }
+        }
+
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        function showAddEventModal() {
+            document.getElementById('event-modal').style.display = 'block';
+        }
+
+        function closeEventModal() {
+            document.getElementById('event-modal').style.display = 'none';
+        }
+
+        // Reports functionality
+        function loadReports() {
+            fetch('/api/reports')
+                .then(response => response.json())
+                .then(reports => {
+                    const reportsList = document.getElementById('reports-list');
+                    reportsList.innerHTML = reports.map(report => `
+                        <div class="report-card">
+                            <h3>${report.report_type.charAt(0).toUpperCase() + report.report_type.slice(1)} Report</h3>
+                            <div class="report-date">
+                                ${new Date(report.start_date).toLocaleDateString()} - 
+                                ${new Date(report.end_date).toLocaleDateString()}
+                            </div>
+                            <div class="report-metrics">
+                                ${Object.entries(report.metrics).map(([key, value]) => `
+                                    <div class="report-metric">
+                                        <span class="metric-label">${key}</span>
+                                        <span class="metric-value">${value}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('');
+                })
+                .catch(error => {
+                    console.error('Error loading reports:', error);
+                });
+        }
+
+        // Event form submission
+        document.getElementById('event-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const eventData = {
+                title: document.getElementById('event-title').value,
+                description: document.getElementById('event-description').value,
+                start_time: document.getElementById('event-start').value,
+                end_time: document.getElementById('event-end').value,
+                event_type: document.getElementById('event-type').value,
+                zone_id: document.getElementById('event-zone').value
+            };
+            
+            fetch('/api/calendar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(eventData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                events.push(data);
+                renderCalendar();
+                renderEventsList();
+                closeEventModal();
+                this.reset();
+            })
+            .catch(error => {
+                console.error('Error creating event:', error);
+            });
+        });
+
+        // Load initial data
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load events
+            loadEvents();
+            
+            // Load reports
+            loadReports();
+        });
+
+        // Update the loadDashboardHistory function
+        function loadDashboardHistory() {
+            const selectedDate = document.getElementById('history-date').value;
+            
+            // Validate date
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const inputDate = new Date(selectedDate);
+            inputDate.setHours(0, 0, 0, 0);
+            
+            if (inputDate > today) {
+                const historyList = document.getElementById('dashboard-history-list');
+                historyList.innerHTML = '<div class="error">Cannot view history for future dates</div>';
+                return;
+            }
+            
+            // Show loading state
+            const historyList = document.getElementById('dashboard-history-list');
+            historyList.innerHTML = '<div class="loading">Loading history...</div>';
+            
+            // Format date as YYYY-MM-DD
+            const formattedDate = selectedDate.split('T')[0];
+            
+            fetch(`/api/dashboard/history?date=${formattedDate}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data || data.length === 0) {
+                        historyList.innerHTML = '<div class="no-data">No history data available for the selected date</div>';
+                        return;
+                    }
+                    
+                    // Sort data by timestamp
+                    data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    
+                    historyList.innerHTML = data.map(item => `
+                        <div class="history-item">
+                            <h4>${new Date(item.timestamp).toLocaleString()}</h4>
+                            <div class="history-metrics">
+                                <div class="history-metric">
+                                    <div class="history-metric-label">Productivity Hours</div>
+                                    <div class="history-metric-value">${item.productivity_hours.toFixed(2)}</div>
+                                </div>
+                                <div class="history-metric">
+                                    <div class="history-metric-label">Room Utilization</div>
+                                    <div class="history-metric-value">${item.room_utilization}%</div>
+                                </div>
+                                <div class="history-metric">
+                                    <div class="history-metric-label">Desk Occupancy</div>
+                                    <div class="history-metric-value">${item.desk_occupancy}%</div>
+                                </div>
+                                <div class="history-metric">
+                                    <div class="history-metric-label">Total People</div>
+                                    <div class="history-metric-value">${item.total_people}</div>
+                                </div>
+                            </div>
+                            <div class="zone-summary" style="margin-top: 10px;">
+                                ${Object.entries(item.zone_counts).map(([zone, count]) => `
+                                    <div class="zone-stat">
+                                        <span class="zone-label">${zone}:</span>
+                                        <span class="zone-value">${count}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('');
+                })
+                .catch(error => {
+                    console.error('Error loading dashboard history:', error);
+                    historyList.innerHTML = '<div class="error">Error loading history data. Please try again.</div>';
+                });
+        }
+
+        // Update the initial load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default date to today
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            document.getElementById('history-date').value = formattedDate;
+            
+            // Set max date to today
+            document.getElementById('history-date').max = formattedDate;
+            
+            // Load initial history
+            loadDashboardHistory();
+        });
+
+        // Add these styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .loading, .error, .no-data {
+                text-align: center;
+                padding: 20px;
+                color: #666;
+            }
+            .error {
+                color: #d32f2f;
+            }
+            .no-data {
+                color: #666;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add these functions
+        let selectedExportFormat = null;
+
+        function exportReport() {
+            document.getElementById('export-modal').style.display = 'block';
+        }
+
+        function closeExportModal() {
+            document.getElementById('export-modal').style.display = 'none';
+            selectedExportFormat = null;
+            // Reset selected state
+            document.querySelectorAll('.export-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+        }
+
+        function selectExportOption(format) {
+            selectedExportFormat = format;
+            // Update selected state
+            document.querySelectorAll('.export-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+        }
+
+        function downloadReport() {
+            if (!selectedExportFormat) {
+                alert('Please select an export format');
+                return;
+            }
+
+            const selectedDate = document.getElementById('history-date').value;
+            
+            // Show loading state
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading';
+            loadingDiv.textContent = 'Preparing report...';
+            document.querySelector('.export-modal-content').appendChild(loadingDiv);
+
+            fetch(`/api/export?date=${selectedDate}&format=${selectedExportFormat}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Export failed');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `dashboard_report_${selectedDate}.${selectedExportFormat}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    closeExportModal();
+                })
+                .catch(error => {
+                    console.error('Error exporting report:', error);
+                    alert('Error exporting report. Please try again.');
+                })
+                .finally(() => {
+                    // Remove loading state
+                    const loadingDiv = document.querySelector('.export-modal-content .loading');
+                    if (loadingDiv) {
+                        loadingDiv.remove();
+                    }
+                });
+        }
+
+        function loadEvents() {
+            fetch('/api/calendar')
+                .then(response => response.json())
+                .then(data => {
+                    events = data;
+                    renderCalendar();
+                    renderEventsList();
+                })
+                .catch(error => {
+                    console.error('Error loading events:', error);
+                });
+        }
+
+        function renderEventsList() {
+            const eventsList = document.getElementById('events-list');
+            if (!events || events.length === 0) {
+                eventsList.innerHTML = '<div class="no-events">No events scheduled</div>';
+                return;
+            }
+
+            // Sort events by start time
+            const sortedEvents = [...events].sort((a, b) => 
+                new Date(a.start_time) - new Date(b.start_time)
+            );
+
+            eventsList.innerHTML = sortedEvents.map(event => `
+                <div class="event-card ${event.event_type}">
+                    <div class="event-header">
+                        <div class="event-title">${event.title}</div>
+                        <div class="event-type ${event.event_type}">
+                            ${event.event_type.replace('_', ' ').toUpperCase()}
+                        </div>
+                    </div>
+                    <div class="event-details">
+                        ${event.description || 'No description provided'}
+                    </div>
+                    <div class="event-time">
+                        <i class="fas fa-clock"></i>
+                        ${new Date(event.start_time).toLocaleString()} - 
+                        ${new Date(event.end_time).toLocaleString()}
+                    </div>
+                    <div class="event-zone">
+                        <i class="fas fa-map-marker-alt"></i>
+                        ${getZoneName(event.zone_id)}
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+
+
+  
+
+</body>
+</html> 
